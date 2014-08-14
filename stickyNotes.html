@@ -1,0 +1,92 @@
+
+<style>
+sticky-note-master {
+	position: absolute;
+	top: 20px;
+	left: 600px;
+	width: 72px;
+	height: 20px;
+	background-color: yellow;
+}
+sticky-note-master /deep/ img {
+	border: 1px solid black;
+	padding-left: 1px;
+	padding-right: 1px;
+	width: 20px;
+	height: 20px;
+}
+</style>
+
+<template id="newNoteTemplate">
+<style>
+	p { position: absolute; background-color: yellow; width: 100px; height: 100px; overflow: scroll; }
+</style>
+	<p contenteditable=true></p> 
+</template>
+
+<script>
+
+var count = 0;
+var stickyActive = false;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* Sticky Notes master control creation */
+var XStickyNoteMasterProto = Object.create(HTMLElement.prototype);
+
+XStickyNoteMasterProto.createdCallback = function() { 
+	var shadow = this.createShadowRoot();
+	shadow.innerHTML = "<img id='newSN' src='newNote1.png' onClick='stickyNotes()'/><img id='showSN' src='expand.png' onClick='expandOrCollapse()'/><img id='clearSN' src='deleteAll.png' onClick='deleteAll()'/>";
+		// also db initialization
+} 
+// close the database proto.detachedCallback = function() {}
+
+var XStickyNoteMaster = document.registerElement('sticky-note-master', {prototype: XStickyNoteMasterProto});
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var listner = function (e) {
+	e = e || window.event;
+	var stickyNoteMaster = document.getElementsByTagName('sticky-note-master')[0];
+	var target = e.target || e.srcElement,
+		text = target.textContent || target.innerText;
+	
+	if (target != stickyNoteMaster) {
+		if (stickyActive && text)
+			createNewNote(target, text, e);
+		else if (stickyActive)
+			alert("Oops!! Can't create a note for this!!");
+	}
+}
+
+function stickyNotes() {
+	stickyActive = true;	
+	document.addEventListener('click', listner, false);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* New note creation */
+var XNewNote = Object.create(HTMLElement.prototype, {
+	createdCallback: {
+		value: function() {
+			var t = document.querySelector('#newNoteTemplate');
+			var clone = document.importNode(t.content, true);
+			this.createShadowRoot().appendChild(clone);
+			// also handle attached and detached callbacks for db 
+		}
+	}
+});
+document.registerElement('new-note', { prototype: XNewNote});
+
+function createNewNote(target, text, e) {
+	var newNote = document.createElement("new-note");
+	var style = "left: "+e.clientX+"px; top: "+e.clientY+"px;";
+	newNote.setAttribute("style", style);
+	newNote.setAttribute("id", "note"+count);
+	count++;
+	document.body.appendChild(newNote);
+	newNote.focus();
+	stickyActive = false;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+</script>
