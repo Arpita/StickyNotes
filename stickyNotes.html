@@ -1,4 +1,7 @@
+<!DOCTYPE html>
+<html>
 
+<head>
 <style>
 sticky-note-master {
 	position: absolute;
@@ -16,23 +19,25 @@ sticky-note-master /deep/ img {
 	height: 20px;
 }
 </style>
+</head>
 
-<template id="newNoteTemplate">
-<style>
-	p { position: absolute; background-color: yellow; width: 100px; height: 100px; overflow: scroll; }
-</style>
-	<p contenteditable=true></p> 
+<body>
+<template id="new-note-template">
+	<style>
+		#notebar { position: relative; background-color: pink; width: 100px; height: 10px; margin: 0; border: 1px solid black; }
+		#editNote { position: relative; background-color: yellow; width: 100px; height: 90px; margin: 0; overflow: scroll; }
+	</style>
+	<p id="notebar"	align="right"><span><img width='10px' height='10px' id="deleteNode" src='deleteAll.png' onClick='deleteSingle(this); return true;'/></span></p>
+	<p contenteditable=true id="editNote"></p>
 </template>
 
 <script>
-
 var count = 0;
 var stickyActive = false;
-
+var importDoc = document.currentScript.ownerDocument;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Sticky Notes master control creation */
 var XStickyNoteMasterProto = Object.create(HTMLElement.prototype);
-
 XStickyNoteMasterProto.createdCallback = function() { 
 	var shadow = this.createShadowRoot();
 	shadow.innerHTML = "<img id='newSN' src='newNote1.png' onClick='stickyNotes()'/><img id='showSN' src='expand.png' onClick='expandOrCollapse()'/><img id='clearSN' src='deleteAll.png' onClick='deleteAll()'/>";
@@ -41,10 +46,9 @@ XStickyNoteMasterProto.createdCallback = function() {
 // close the database proto.detachedCallback = function() {}
 
 var XStickyNoteMaster = document.registerElement('sticky-note-master', {prototype: XStickyNoteMasterProto});
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var listner = function (e) {
+var listener = function(e) {
 	e = e || window.event;
 	var stickyNoteMaster = document.getElementsByTagName('sticky-note-master')[0];
 	var target = e.target || e.srcElement,
@@ -60,33 +64,79 @@ var listner = function (e) {
 
 function stickyNotes() {
 	stickyActive = true;	
-	document.addEventListener('click', listner, false);
+	document.addEventListener('click', listener, false);
 }
+
+/////////////////////////////////////////
+/* Single Note specific functions */
+var expandSingle = function(e) {
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+	var hideNode = target.querySelector('#'+target.id+'::shadow #editNote');
+	hideNode.style.display = 'block';
+	hideNode.focus();
+	target.removeEventListener('click', expandSingle, false);
+	var noteBar = target.querySelector('#'+target.id+'::shadow #notebar');
+	noteBar.style.opacity = '1';
+	noteBar.style.transition = 'opacity 420ms ease-in-out';
+}
+
+var hideSingle = function(e) {
+	e = e || window.event;
+	var target = e.target || e.srcElement;
+	var hideNode = target.querySelector('#'+target.id+'::shadow #editNote');
+	hideNode.style.display = 'none';
+	target.addEventListener('click', expandSingle, false);
+	var noteBar = target.querySelector('#'+target.id+'::shadow #notebar');
+	noteBar.style.opacity = '0.4';
+	noteBar.style.transition = 'opacity 420ms ease-in-out';
+}
+
+function deleteSingle(elem) {
+	var noteBar = elem.parentNode.parentNode;
+	var shadowRoot = noteBar.parentNode;
+	var notesArray = document.getElementsByTagName('new-note');
+	var host;
+	for (i = 0; i < notesArray.length; i++) {
+        if (shadowRoot === notesArray[i].shadowRoot)
+			host = notesArray[i];
+	}
+	if (host)
+		host.parentNode.removeChild(host);
+	else
+		alert('error in removing node');
+// Also delete entry from db		
+}
+////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* New note creation */
-var XNewNote = Object.create(HTMLElement.prototype, {
-	createdCallback: {
-		value: function() {
-			var t = document.querySelector('#newNoteTemplate');
-			var clone = document.importNode(t.content, true);
-			this.createShadowRoot().appendChild(clone);
-			// also handle attached and detached callbacks for db 
-		}
+var XNewNoteProto = Object.create(HTMLElement.prototype, {
+  createdCallback: {
+    value: function() {
+	  var t = importDoc.querySelector('#new-note-template');
+      var clone = document.importNode(t.content, true);
+      this.createShadowRoot().appendChild(clone);
+	  this.addEventListener('blur', hideSingle, false);
 	}
+  }
 });
-document.registerElement('new-note', { prototype: XNewNote});
+document.registerElement('new-note', {prototype: XNewNoteProto});
 
 function createNewNote(target, text, e) {
-	var newNote = document.createElement("new-note");
-	var style = "left: "+e.clientX+"px; top: "+e.clientY+"px;";
-	newNote.setAttribute("style", style);
-	newNote.setAttribute("id", "note"+count);
-	count++;
-	document.body.appendChild(newNote);
-	newNote.focus();
+	var newNote = document.createElement('new-note');
+	newNote.style.position = 'absolute';
+	newNote.style.left = e.clientX+'px';
+	newNote.style.top = e.clientY+'px';
+	newNote.setAttribute('id', 'note'+count);
+	document.body.appendChild(newNote);	
+	newNote.querySelector('#note'+count+'::shadow #editNote').focus();	
+	count++;	
 	stickyActive = false;
+	document.removeEventListener('click', listener, false);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 </script>
+</body>
+</html>
