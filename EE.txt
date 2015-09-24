@@ -1,0 +1,60 @@
+Admin:
+
+Access to Users
+/users
+
+GET: /users
+Lists all users
+
+/users?user_id=<>&..
+- List sorted, time of joining, by location
+
+POST: /users
+Add new user
+
+PUT: /users/{user_id}
+Edit user details
+
+DELETE: /users/{user_id}
+Delete user 
+
+EGGS:
+
+GET: /users/{user_id}/eggs
+All eggs for that user (received, sent)
+GET: /users/{user_id}/eggs?egg_id=<>&sortBy=<> etc
+
+POST: /users/{user_id}/eggs
+Add an egg, either received or sent
+
+PUT: /users/{user_id}/eggs/{egg_id}
+update the status of an existing egg - consumed, expired etc.
+
+DELETE: /users/{user_id}/eggs/{egg_id}
+Delete an egg
+
+
+Access to Restaurants/Venues - Stores
+/stores
+
+GET: /stores
+Lists all stores
+
+GET: /stores?store_id=<,> [comma separated list in case multiple entities]
+/stores?location=<,>
+/stores?store_id=<>&sortBy=<>&sortOrder=<>
+
+- List stores by location (sort by, sort order)
+- By current location, By specified location
+- List stores by type (retail, dine, wellness, travel, online), filtered by location
+
+POST: /stores
+Adds a new store
+
+PUT: /stores/{store_id}
+Updates an existing store
+
+DELETE: /stores/{store_id}
+Deletes an existing store
+
+
